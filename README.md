@@ -47,6 +47,13 @@
 
 🔹 Uvicorn – ASGI server for FastAPI
 
+User Interface:
+
+<img width="1440" alt="Screenshot 2025-03-09 at 3 25 04 PM" src="https://github.com/user-attachments/assets/76eadc67-7335-4b21-b18b-1aad7c8cf5d3" />
+
+<img width="393" alt="Screenshot 2025-03-09 at 3 25 44 PM" src="https://github.com/user-attachments/assets/66fa5527-f470-48b7-b8c5-dd0c3a275e79" />
+
+
 
 💻 How to Run Locally
 
