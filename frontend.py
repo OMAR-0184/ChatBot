@@ -1,63 +1,78 @@
-from dotenv import load_dotenv
+# frontend.py
 import requests
 import streamlit as st
 
-load_dotenv()
-
-
-st.set_page_config(page_title="LangGraph Agent UI", layout="centered")
+st.set_page_config(page_title="LangGraph Agent UI", layout="wide")
 st.title("🤖 AI Chatbot Agents")
-st.write("Create and Interact with AI Agents!")
+st.write("Create and Interact with AI Agents with Stateful Chat!")
 
-system_prompt = st.text_area("Define your AI Agent:", height=70, placeholder="Type your system prompt here...")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-MODEL_NAMES_GROQ = ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"]
-MODEL_NAMES_OPENAI = ["gpt-4o-mini"]
+with st.sidebar:
+    st.header("⚙️ Agent Configuration")
+    
+    system_prompt = st.text_area(
+        "Define your AI Agent's personality:", 
+        height=100, 
+        placeholder="e.g., You are a helpful assistant."
+    )
 
-provider = st.radio("Select Provider:", ("Groq", "OpenAI","Omar"))
+    provider = st.radio("Select Provider:", ("Groq", "OpenAI", "Google"))
 
-if provider == "Groq":
-    selected_model = st.selectbox("Select Groq Model:", MODEL_NAMES_GROQ)
-elif provider == "OpenAI":
-    selected_model = st.selectbox("Select OpenAI Model:", MODEL_NAMES_OPENAI)
+    if provider == "Groq":
+        selected_model = st.selectbox("Select Groq Model:", ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"])
+    elif provider == "OpenAI":
+        selected_model = st.selectbox("Select OpenAI Model:", ["gpt-4o-mini"])
+    elif provider == "Google":
+        selected_model = st.selectbox("Select Google Model:", ["gemini-1.5-flash-latest"])
 
-allow_web_search = st.checkbox("Allow Web Search")
-user_query = st.text_area("Enter your query:", height=150, placeholder="Ask Anything!")
+    allow_web_search = st.checkbox("Enable Web Search (via Tavily)", value=True)
+    
+    if st.button("Clear Chat History"):
+        st.session_state.messages = []
+        st.rerun()
 
-API_URL = "http://127.0.0.1:8000/chat"
+# --- Main Chat Interface ---
 
-if st.button("🚀 Ask Agent!"):
-    if user_query.strip():
-        payload = {
-            "model_name": selected_model,
-            "model_provider": provider,
-            "system_prompt": system_prompt,
-            "messages": [user_query],
-            "allow_search": allow_web_search
-        }
-        
-        response = requests.post(API_URL, json=payload)
-        
-        if response.status_code == 200:
-            response_data = response.json()
-            
-            if "error" in response_data:
-                st.error(response_data["error"])
-            elif "response" in response_data:
-                final_response = response_data["response"]
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+
+if user_query := st.chat_input("What would you like to ask?"):
+
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    with st.chat_message("user"):
+        st.markdown(user_query)
+
+    API_URL = "http://127.0.0.1:8000/chat"
+    payload = {
+        "model_name": selected_model,
+        "model_provider": provider,
+        "system_prompt": system_prompt,
+        "messages": st.session_state.messages, 
+        "allow_search": allow_web_search
+    }
+    
+    with st.chat_message("assistant"):
+        with st.spinner("🧠 Thinking..."):
+            try:
+                response = requests.post(API_URL, json=payload)
+                response.raise_for_status()  
                 
-                # Handle nested response case
-                if isinstance(final_response, dict) and "response" in final_response:
-                    final_response = final_response["response"]
+                response_data = response.json()
 
-                if isinstance(final_response, str) and final_response.strip():
-                    # Formatting response into bullet points
-                    lines = final_response.split("\n")
-                    formatted_response = "\n".join([f"- {line.strip()}" for line in lines if line.strip()])
-                    
-                    st.markdown("### 📖 AI Response")
-                    st.markdown(formatted_response)
+                if "error" in response_data:
+                    st.error(response_data["error"])
+                elif "response" in response_data:
+                    final_response = response_data["response"]
+                    st.markdown(final_response)
+                    st.session_state.messages.append({"role": "assistant", "content": final_response})
                 else:
-                    st.warning("⚠️ Empty or unexpected response format.")
-        else:
-            st.error(f"API Error: {response.status_code}")
+                    st.warning("⚠️ Received an unexpected response format.")
+
+            except requests.exceptions.RequestException as e:
+                st.error(f"API Error: Could not connect to the backend. Is it running? \n\nDetails: {e}")
+            except Exception as e:
+                st.error(f"An unexpected error occurred: {e}")

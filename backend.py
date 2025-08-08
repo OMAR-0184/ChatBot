@@ -1,23 +1,28 @@
+# backend.py
 from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
-from ai_agent import get_response_from_ai_agent  # Ensure this import is correct
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any
+from agent import get_response_from_ai_agent 
 
 app = FastAPI(title="LangGraph AI Agent")
 
-ALLOWED_MODEL_NAMES = ["llama3-70b-8192", "mixtral-8x7b-32768", "llama-3.3-70b-versatile", "gpt-4o-mini"]
+
+ALLOWED_MODEL_NAMES = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant", 
+    "gpt-4o-mini",
+    "gemini-1.5-flash-latest"
+]
 
 class RequestState(BaseModel):
     model_name: str
     model_provider: str
     system_prompt: str
-    messages: List[str]
+    messages: List[Dict[str, Any]] = Field(default_factory=list)
     allow_search: bool
 
 @app.post("/chat")
 def chat_endpoint(request: RequestState):
-    """API Endpoint to interact with the chatbot using LangGraph and search tools."""
-    print("Received Request: ", request.dict())  # Debugging log
     if request.model_name not in ALLOWED_MODEL_NAMES:
         return {"error": "Invalid model name. Kindly select a valid AI model"}
 
@@ -29,7 +34,7 @@ def chat_endpoint(request: RequestState):
         request.model_provider
     )
     
-    return {"response": response}
+    return response
 
 if __name__ == "__main__":
     import uvicorn
