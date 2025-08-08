@@ -46,7 +46,7 @@ if user_query := st.chat_input("What would you like to ask?"):
     with st.chat_message("user"):
         st.markdown(user_query)
 
-    API_URL = "http://127.0.0.1:8000/chat"
+    API_URL = "https://chatbotapii.onrender.com/"
     payload = {
         "model_name": selected_model,
         "model_provider": provider,
