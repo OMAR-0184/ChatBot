@@ -25,7 +25,7 @@ with st.sidebar:
     elif provider == "OpenAI":
         selected_model = st.selectbox("Select OpenAI Model:", ["gpt-4o-mini"])
     elif provider == "Google":
-        selected_model = st.selectbox("Select Google Model:", ["gemini-1.5-flash-latest"])
+        selected_model = st.selectbox("Select Google Model:", ["gemini-2.5-flash"])
 
     allow_web_search = st.checkbox("Enable Web Search (via Tavily)", value=True)
     

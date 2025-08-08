@@ -11,7 +11,7 @@ ALLOWED_MODEL_NAMES = [
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant", 
     "gpt-4o-mini",
-    "gemini-1.5-flash-latest"
+    "gemini-2.5-flash"
 ]
 
 class RequestState(BaseModel):
